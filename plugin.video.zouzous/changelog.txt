@@ -1,0 +1,7 @@
+﻿1.0.0 (02/06/2014) par LINUXMAN 
++ Creation à partir du plug-in FranceTVPluzz de JUL1EN094 (version 1.0.7)
+
+
+
+
+
