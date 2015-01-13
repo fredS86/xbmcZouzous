@@ -1,0 +1,15 @@
+http://webservices.francetelevisions.fr/jeunesse/getGuideWebTv.php?os_type=android&device=smartphone&os_version=4.0.4&app_version=1.0&app_id=3GS&model=LT22i&uuid=991522455243039269c59a8&size=800x480
+http://webservices.francetelevisions.fr/jeunesse/getCatchup.php?os_type=android&device=smartphone&os_version=4.0.4&app_version=1.0&app_id=3GS&model=LT22i&uuid=991522455243039269c59a8&size=800x480
+http://webservices.francetelevisions.fr/jeunesse/getInterstitiel.php?os_type=android&device=smartphone&os_version=4.0.4&app_version=1.0&app_id=3GS&model=LT22i&uuid=991522455243039269c59a8&size=800x480
+
+http://pluzz.francetv.fr/staticftv/catchup/img/10/60/6093_1336052790_csa1.png
+http://pluzz.francetv.fr/staticftv/catchup/img/10/147/14791_1381333134_csa1.png
+http://pluzz.francetv.fr/staticftv/programmes/16633_1399304939_csa1.jpg
+http://pluzz.francetv.fr/staticftv/programmes/16667_1399472320_csa1.jpg
+http://pluzz.francetv.fr/staticftv/catchup/img/10/11/1182_1340977145_csa1.png
+http://pluzz.francetv.fr/staticftv/catchup/img/10/143/14369_1377270961_csa1.png
+
+http://medias2.francetv.fr/playlists/zouzous/zouzous_mobiles.m3u8
+
+
+http.user_agent Android SDK SW (4.0.3a; 4.0.4; LT22i; armeabi-v7a)
