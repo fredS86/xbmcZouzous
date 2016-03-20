@@ -1,4 +1,6 @@
-﻿1.0.0 (02/06/2014) par LINUXMAN 
+﻿1.0.1 (20/03/2016 par LINUXMAN
+-MAJ des URL de catalog et prise en compte du UserAgent
+1.0.0 (02/06/2014) par LINUXMAN 
 + Creation à partir du plug-in FranceTVPluzz de JUL1EN094 (version 1.0.7)
 
 

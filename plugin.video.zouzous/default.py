@@ -9,7 +9,6 @@ import xbmcaddon
 import os
 import sys 
 import urllib
-import urllib2
 import re
 import time
 import cPickle as pickle
@@ -26,8 +25,8 @@ common.plugin = "plugin.video.Zouzous"
 
 __addonID__         = "plugin.video.Zouzous"
 __author__          = "LINUXMAN"
-__date__            = "02-06-2014"
-__version__         = "1.0.0"
+__date__            = "20-03-2016"
+__version__         = "1.0.1"
 __credits__         = ""
 __addon__           = xbmcaddon.Addon( __addonID__ )
 __settings__        = __addon__
@@ -45,17 +44,22 @@ CACHEDIR            = os.path.join( ADDON_DATA, "cache")
 THUMB_CACHE_PATH    = os.path.join( xbmc.translatePath( "special://profile/" ), "Thumbnails", "Video" )
 FANART_PATH         = os.path.join( ROOTDIR, "fanart.jpg" )
 # Web variable
-USERAGENT           = "Mozilla/5.0 (Windows NT 5.1; rv:15.0) Gecko/20100101 Firefox/15.0.1"
+USERAGENT           = "Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:37.0) Gecko/20100101 Firefox/41.0"
 # List of directories to check at startup
 dirCheckList        = (CACHEDIR,)
 # Catalogue
 CATALOG_PATH        = os.path.join(CACHEDIR,'ZouzousCatalog.json')
 DIRECT_PATH        = os.path.join(CACHEDIR,'ZouzousDirect.json')
-jsonReplayCatalog   = "http://webservices.francetelevisions.fr/jeunesse/getCatchup.php?os_type=android&device=smartphone&os_version=4.0.4&app_version=1.0&app_id=3GS&model=LT22i&uuid=991522455243039269c59a8&size=800x480"
-jsonDirect          ="http://webservices.francetelevisions.fr/jeunesse/getGuideWebTv.php?os_type=android&device=smartphone&os_version=4.0.4&app_version=1.0&app_id=3GS&model=LT22i&uuid=991522455243039269c59a8&size=800x480"
+jsonReplayCatalog   = "http://webservices.francetelevisions.fr/jeunesse/getCatchup.php"
+jsonDirect          ="http://webservices.francetelevisions.fr/jeunesse/getGuideWebTv.php"
 
 if not os.path.exists(CACHEDIR) :
     os.makedirs(CACHEDIR, mode=0777)
+
+class AppURLopener(urllib.FancyURLopener):
+    version = USERAGENT
+    
+urllib._urlopener = AppURLopener()
 
 class Zouzous:
     """
@@ -194,9 +198,13 @@ class Zouzous:
     def download_catalogs(self):
         if os.path.exists(CATALOG_PATH):
             os.remove(CATALOG_PATH)
+        if self.debug_mode:
+            print "REPLAY CATALOG URL: "+jsonReplayCatalog
         urllib.urlretrieve(jsonReplayCatalog,CATALOG_PATH)
         if os.path.exists(DIRECT_PATH):
             os.remove(DIRECT_PATH)
+        if self.debug_mode:
+            print "DIRECT CATALOG URL: "+jsonDirect
         urllib.urlretrieve(jsonDirect,DIRECT_PATH)
     
     def set_debug_mode(self):
