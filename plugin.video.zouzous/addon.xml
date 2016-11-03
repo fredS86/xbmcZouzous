@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <addon id="plugin.video.Zouzous"
        name="Zouzous.fr"
-       version="1.0.1"
-       provider-name="linux_man">
+       version="1.1~beta1"
+       provider-name="FredS86">
   <requires>
     <import addon="xbmc.python" version="2.1.0"/>
     <import addon="script.module.parsedom" version="2.5.1"/>
     <import addon="script.module.simplejson"/>
+    <import addon="script.module.requests"/>
   </requires>
   <extension point="xbmc.python.pluginsource"
             library="default.py">
@@ -14,9 +15,9 @@
   </extension>
   <extension point="xbmc.addon.metadata">
     <platform>all</platform>
-    <summary>Les Zouzous</summary>
-    <summary lang="fr">Les Zouzous</summary>
-    <description>Zouzous : Catchup TV and live from mobile catalog</description>
-    <description lang="fr">Plugin donnant accès aux vidéos et au direct de l'application mobile Zouzous</description>
+    <summary>Zouzous, cartoons for toddlers</summary>
+    <summary lang="fr">Zouzous, dessines animés pour les tout-petits</summary>
+    <description>Zouzous : catchup TV from www.zouzous.fr</description>
+    <description lang="fr">Zouzous : replays et vidéos du site www.zouzous.fr</description>
   </extension>
 </addon>

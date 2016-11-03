@@ -8,25 +8,19 @@ import xbmcaddon
 # os and lib modules
 import os
 import sys 
-import urllib
-import re
-import time
-import cPickle as pickle
-import zipfile
 import simplejson as json
-import ast
 # print_exc
 from traceback import print_exc
-# parseDOM
-import CommonFunctions
-common = CommonFunctions
-common.plugin = "plugin.video.Zouzous"
+# requests
+import requests
+webSession = requests.Session()
 
+from urlparse import parse_qsl
 
 __addonID__         = "plugin.video.Zouzous"
-__author__          = "LINUXMAN"
-__date__            = "20-03-2016"
-__version__         = "1.0.1"
+__author__          = "FredS86"
+__date__            = "02-11-2016"
+__version__         = "2.0"
 __credits__         = ""
 __addon__           = xbmcaddon.Addon( __addonID__ )
 __settings__        = __addon__
@@ -41,31 +35,185 @@ BASE_RESOURCE_PATH  = os.path.join( ROOTDIR, "resources" )
 MEDIA_PATH          = os.path.join( BASE_RESOURCE_PATH, "media" )
 ADDON_DATA          = xbmc.translatePath( "special://profile/addon_data/%s/" % __addonID__ )
 CACHEDIR            = os.path.join( ADDON_DATA, "cache")
-THUMB_CACHE_PATH    = os.path.join( xbmc.translatePath( "special://profile/" ), "Thumbnails", "Video" )
 FANART_PATH         = os.path.join( ROOTDIR, "fanart.jpg" )
-# Web variable
-USERAGENT           = "Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:37.0) Gecko/20100101 Firefox/41.0"
 # List of directories to check at startup
 dirCheckList        = (CACHEDIR,)
 # Catalogue
-CATALOG_PATH        = os.path.join(CACHEDIR,'ZouzousCatalog.json')
-DIRECT_PATH        = os.path.join(CACHEDIR,'ZouzousDirect.json')
-jsonReplayCatalog   = "http://webservices.francetelevisions.fr/jeunesse/getCatchup.php"
-jsonDirect          ="http://webservices.francetelevisions.fr/jeunesse/getGuideWebTv.php"
+baseUrl            = "http://www.zouzous.fr/heros/{0}/playlist" # + "?limit=10&offset=4"
+infosUrl           = "http://sivideo.webservices.francetelevisions.fr/tools/getInfosOeuvre/v2/?idDiffusion={0}"
 
-if not os.path.exists(CACHEDIR) :
-    os.makedirs(CACHEDIR, mode=0777)
+# Get the plugin url in plugin:// notation.
+__url__ = sys.argv[0]
+# Get the plugin handle as an integer number.
+__handle__ = int(sys.argv[1])
 
-class AppURLopener(urllib.FancyURLopener):
-    version = USERAGENT
-    
-urllib._urlopener = AppURLopener()
+FANART_ID='1024x576'
+THUMB_ID='262x262'
+HEROES = [
+      {
+        'id' : 'peppa-pig-1',
+        'name': 'Peppa Pig',
+        'thumb': 'http://www.zouzous.fr/image/%s/pictos-heros-peppa-800x800.png'%THUMB_ID,
+        'fanart': 'http://www.zouzous.fr/image/%s/pictos-heros-peppa-800x800.png'%FANART_ID,
+        'color': '#dbbfd0'},
+      {
+        'id' : 'la-maison-de-mickey', 
+        'name': 'La maison de mickey',
+        'thumb': 'http://www.zouzous.fr/image/%s/heros-20.png'%THUMB_ID,
+        'fanart': 'http://www.zouzous.fr/image/%s/heros-20.png'%FANART_ID,
+        'color': '#c11e21'},
+      {
+        'id' : 'sam-le-pompier',
+        'name': 'Sam le Pompier',
+        'thumb': 'http://www.zouzous.fr/image/%s/pictos-heros-samlepompier-800x800.png'%THUMB_ID,
+        'fanart': 'http://www.zouzous.fr/image/%s/pictos-heros-samlepompier-800x800.png'%FANART_ID,
+        'color': '#133171'},
+      {
+        'id' : 'oui-oui',
+        'name': 'Hé, Oua-Oua',
+        'thumb': 'http://www.zouzous.fr/image/%s/he.png'%THUMB_ID,
+        'fanart': 'http://www.zouzous.fr/image/%s/he.png'%FANART_ID,
+        'color': '#5565b0'},
+      {
+        'id' : 'pyjamasques',
+        'name': 'Pyjamasques',
+        'thumb': 'http://www.zouzous.fr/image/%s/pictos-heros-pyjamasques-800x800-1.png'%THUMB_ID,
+        'fanart': 'http://www.zouzous.fr/image/%s/pictos-heros-pyjamasques-800x800-1.png'%FANART_ID,
+        'color': '#009a49'},
+      {
+        'id' : 'cesar-et-capucine',
+        'name': 'César et Capucine',
+        'thumb': 'http://www.zouzous.fr/image/%s/pictos-heros-cesaeretcapucine-800x800.png'%THUMB_ID,
+        'fanart': 'http://www.zouzous.fr/image/%s/pictos-heros-cesaeretcapucine-800x800.png'%FANART_ID,
+        'color': '#85d7f3'},
+      {
+        'id' : 'kiwi-et-stritt',
+        'name': 'Kiwi et Strit',
+        'thumb': 'http://www.zouzous.fr/image/%s/sans-titre-2-267.png'%THUMB_ID,
+        'fanart': 'http://www.zouzous.fr/image/%s/sans-titre-2-267.png'%FANART_ID,
+        'color': '#44a747'},
+      {
+        'id' : 'docteur-lapeluche',
+        'name': 'Docteur Lapeluche',
+        'thumb': 'http://www.zouzous.fr/image/%s/heros-21.png'%THUMB_ID,
+        'fanart': 'http://www.zouzous.fr/image/%s/heros-21.png'%FANART_ID,
+        'color': '#b36e97'},
+      {
+        'id' : 'masha-et-michka',
+        'name': 'Masha et Michka',
+        'thumb': 'http://www.zouzous.fr/image/%s/mashaetmichka-preview-2300-1.png'%THUMB_ID,
+        'fanart': 'http://www.zouzous.fr/image/%s/mashaetmichka-preview-2300-1.png'%FANART_ID,
+        'color': '#a35a8d'},
+      {
+        'id' : 'pierre-lapin',
+        'name': 'Pierre Lapin',
+        'thumb': 'http://www.zouzous.fr/image/%s/pictos-heros-pierre-lapin-800x800.png'%THUMB_ID,
+        'fanart': 'http://www.zouzous.fr/image/%s/pictos-heros-pierre-lapin-800x800.png'%FANART_ID,
+        'color': '#505481'},
+      {
+        'id' : 'mini-sorcieres-1',
+        'name': 'Mini-Sorcières',
+        'thumb': 'http://www.zouzous.fr/image/%s/sans-titre-1-685.png'%THUMB_ID,
+        'fanart': 'http://www.zouzous.fr/image/%s/sans-titre-1-685.png'%FANART_ID,
+        'color': '#00718f'},
+      {
+        'id' : 'petit-ours-brun',
+        'name': 'Petit Ours Brun',
+        'thumb': 'http://www.zouzous.fr/image/%s/pictos-heros-pob-800x800.png'%THUMB_ID,
+        'fanart': 'http://www.zouzous.fr/image/%s/pictos-heros-pob-800x800.png'%FANART_ID,
+        'color': '#f0bb6c'},
+      {
+        'id' : 'les-triples',
+        'name': 'Les triplés',
+        'thumb': 'http://www.zouzous.fr/image/%s/pictos-heros-lestriples-800x800.png'%THUMB_ID,
+        'fanart': 'http://www.zouzous.fr/image/%s/pictos-heros-lestriples-800x800.png'%FANART_ID,
+        'color': '#6e8dce'},
+      {
+        'id' : 'les-comptines-de-boubi',
+        'name': 'Les comptines de Boubi',
+        'thumb': 'http://www.zouzous.fr/image/%s/boubi-picto-heros-notes2.png'%THUMB_ID,
+        'fanart': 'http://www.zouzous.fr/image/%s/boubi-picto-heros-notes2.png'%FANART_ID,
+        'color': '#a85a56'},
+      {
+        'id' : 'bob-le-bricoleur',
+        'name': 'Bob le bricoleur',
+        'thumb': 'http://www.zouzous.fr/image/%s/pictos-heros-boblebrico-800x800.png'%THUMB_ID,
+        'fanart': 'http://www.zouzous.fr/image/%s/pictos-heros-boblebrico-800x800.png'%FANART_ID,
+        'color': '#81909b'},
+      {
+        'id' : 'jack-et-les-camions',
+        'name': 'Jack et les camions',
+        'thumb': 'http://www.zouzous.fr/image/%s/pictos-heros-jack-et-les-camions-800x800.png'%THUMB_ID,
+        'fanart': 'http://www.zouzous.fr/image/%s/pictos-heros-jack-et-les-camions-800x800.png'%FANART_ID,
+        'color': '#e49076'},
+      {
+        'id' : 'petit-ours-brun-en-anglais',
+        'name': 'Petit Ours Brun en anglais',
+        'thumb': 'http://www.zouzous.fr/image/%s/pictos-heros-pob-english-800x800.png'%THUMB_ID,
+        'fanart': 'http://www.zouzous.fr/image/%s/pictos-heros-pob-english-800x800.png'%FANART_ID,
+        'color': '#e588e6'},
+      {
+        'id' : 'le-manege-enchante',
+        'name': 'Le manège enchanté',
+        'thumb': 'http://www.zouzous.fr/image/%s/pictos-heros-amnegeenchante-800x800.png'%THUMB_ID,
+        'fanart': 'http://www.zouzous.fr/image/%s/pictos-heros-amnegeenchante-800x800.png'%FANART_ID,
+        'color': '#f6cb51'},
+      {
+        'id' : 'mademoiselle-zazie',
+        'name': 'Mademoiselle Zazie',
+        'thumb': 'http://www.zouzous.fr/image/%s/mademoisellezazie.png'%THUMB_ID,
+        'fanart': 'http://www.zouzous.fr/image/%s/mademoisellezazie.png'%FANART_ID,
+        'color': '#fe752e'},
+      {
+        'id' : 'a-table-les-enfants-1',
+        'name': 'A table les enfants',
+        'thumb': 'http://www.zouzous.fr/image/%s/pictos-heros-atable-800x800-1.png'%THUMB_ID,
+        'fanart': 'http://www.zouzous.fr/image/%s/pictos-heros-atable-800x800-1.png'%FANART_ID,
+        'color': '#44d138'},
+      {
+        'id' : 'zack-et-quack',
+        'name': 'Zack et Quack',
+        'thumb': 'http://www.zouzous.fr/image/%s/zack-excited-01.png'%THUMB_ID,
+        'fanart': 'http://www.zouzous.fr/image/%s/zack-excited-01.png'%FANART_ID,
+        'color': '#20b4b9'},
+      {
+        'id' : 'les-defis-d-alfridge-1',
+        'name': 'Les défis d\'Alfridge',
+        'thumb': 'http://www.zouzous.fr/image/%s/alfriedge.png'%THUMB_ID,
+        'fanart': 'http://www.zouzous.fr/image/%s/alfriedge.png'%FANART_ID,
+        'color': '#f19104'},
+      {
+        'id' : 'manimo',
+        'name': 'Manimo',
+        'thumb': 'http://www.zouzous.fr/image/%s/pictos-heros-manimo-800x800.png'%THUMB_ID,
+        'fanart': 'http://www.zouzous.fr/image/%s/pictos-heros-manimo-800x800.png'%FANART_ID,
+        'color': '#cac1ad'},
+      {
+        'id' : 'sid-le-petit-scientifique',
+        'name': 'Sid le petit scientifique',
+        'thumb': 'http://www.zouzous.fr/image/%s/pictos-heros-sid-800x800.png'%THUMB_ID,
+        'fanart': 'http://www.zouzous.fr/image/%s/pictos-heros-sid-800x800.png'%FANART_ID,
+        'color': '#5c61bd'},
+      {
+        'id' : 't-choupi',
+        'name': 'T\'choupi à l\'école',
+        'thumb': 'http://www.zouzous.fr/image/%s/pictos-heros-tchoupi-800x800.png'%THUMB_ID,
+        'fanart': 'http://www.zouzous.fr/image/%s/pictos-heros-tchoupi-800x800.png'%FANART_ID,
+        'color': '#756c69'},
+      {
+        'id' : 'zou',
+        'name': 'Zou',
+        'thumb': 'http://www.zouzous.fr/image/%s/pictos-heros-zou-800x800.png'%THUMB_ID,
+        'fanart': 'http://www.zouzous.fr/image/%s/pictos-heros-zou-800x800.png'%FANART_ID,
+        'color': '#fdd237'},
+      ]
+
 
 class Zouzous:
     """
     main plugin class
     """
-    debug_mode = False #self.debug_mode
+    debug_mode = False
     
     def __init__( self, *args, **kwargs ):
         print "==============================="
@@ -80,183 +228,225 @@ class Zouzous:
             print "ADDON_DATA: %s"%ADDON_DATA
             print "CACHEDIR: %s"%CACHEDIR 
             print "FANART_PATH: %s"%FANART_PATH 
-        params     = self.get_params()
-        name       = None
-        mode       = None
-        iconimage  = None   
-        url = None
-        try:
-            url=urllib.unquote_plus(params["url"])
-        except:
-            pass
-        try:
-            name=urllib.unquote_plus(params["name"])
-        except:
-            pass
-        try:
-            mode=int(params["mode"])
-        except:
-            pass
-        try:
-            iconimage=urllib.unquote_plus(params["iconimage"])
-        except:
-            pass
-                               
-        if self.debug_mode:
-            print "Mode: "+str(mode)
-            print "Name: "+str(name)
-            print "Iconimage: "+str(iconimage)
-            print "URL: "+str(url)
  
         # Check if directories in user data exist
         for i in range(len(dirCheckList)):
             self.checkfolder(dirCheckList[i]) 
     
-        if mode==None:
-            self.download_catalogs()
-            self.addDirect()
-            self.addReplay(1)
-            self.addLastDay(3)
-            self.clean_thumbnail(str(url))
-            xbmcplugin.setPluginCategory( handle=int( sys.argv[ 1 ] ), category=__language__ ( 30000 ) )
-            xbmcplugin.endOfDirectory(int(sys.argv[1]))
-            xbmcplugin.addSortMethod( handle=int( sys.argv[ 1 ] ), sortMethod=xbmcplugin.SORT_METHOD_UNSORTED)
-            xbmcplugin.addSortMethod( handle=int( sys.argv[ 1 ] ), sortMethod=xbmcplugin.SORT_METHOD_LABEL )
-        
-        elif mode==1:
-            self.addSeries(2)
-            self.clean_thumbnail(str(url))
-            xbmcplugin.setPluginCategory( handle=int( sys.argv[ 1 ] ), category=__language__ ( 30000 ) )
-            xbmcplugin.endOfDirectory(int(sys.argv[1]))
-            xbmcplugin.addSortMethod( handle=int( sys.argv[ 1 ] ), sortMethod=xbmcplugin.SORT_METHOD_UNSORTED)
-            xbmcplugin.addSortMethod( handle=int( sys.argv[ 1 ] ), sortMethod=xbmcplugin.SORT_METHOD_LABEL )
-            xbmcplugin.addSortMethod( handle=int( sys.argv[ 1 ] ), sortMethod=xbmcplugin.SORT_METHOD_DATE )
-
-        elif mode==2:
-            self.addEpisodes(name, iconimage)
-            self.clean_thumbnail(str(url))
-            xbmcplugin.setPluginCategory( handle=int( sys.argv[ 1 ] ), category=__language__ ( 30000 ) )
-            xbmcplugin.endOfDirectory(int(sys.argv[1]))
-            xbmcplugin.addSortMethod( handle=int( sys.argv[ 1 ] ), sortMethod=xbmcplugin.SORT_METHOD_UNSORTED)
-            xbmcplugin.addSortMethod( handle=int( sys.argv[ 1 ] ), sortMethod=xbmcplugin.SORT_METHOD_LABEL )
-            xbmcplugin.addSortMethod( handle=int( sys.argv[ 1 ] ), sortMethod=xbmcplugin.SORT_METHOD_DATE )
-
-        elif mode==3:
-            self.addEpisodes(name, iconimage)
-            self.clean_thumbnail(str(url))
-            xbmcplugin.setPluginCategory( handle=int( sys.argv[ 1 ] ), category=__language__ ( 30000 ) )
-            xbmcplugin.endOfDirectory(int(sys.argv[1]))
-            xbmcplugin.addSortMethod( handle=int( sys.argv[ 1 ] ), sortMethod=xbmcplugin.SORT_METHOD_UNSORTED)
-            xbmcplugin.addSortMethod( handle=int( sys.argv[ 1 ] ), sortMethod=xbmcplugin.SORT_METHOD_LABEL )
-            xbmcplugin.addSortMethod( handle=int( sys.argv[ 1 ] ), sortMethod=xbmcplugin.SORT_METHOD_DATE )
-
-        elif mode==5:
-            item = xbmcgui.ListItem(path=url)
-            xbmcplugin.setResolvedUrl(handle=int(sys.argv[1]), succeeded=True, listitem=item)
+        self.router(sys.argv[2])
 
 
-    def addEpisodes(self, name, iconimage):
-            data        = open(CATALOG_PATH).read()
-            jsoncat     = json.loads(data.decode('iso-8859-1'))
-            response  = jsoncat['response']
-            programmes =response['programmes']
-            for serie in programmes :
-                serie_name          = serie['serie'].encode('utf-8')
-                if serie_name == name : 
-                    episodes =serie['liste_episodes']
-                    for episode in episodes :
-                        episode_name = episode['episode'].encode('utf-8')
-                        episode_url = episode['url_contenu'].encode('utf-8')
-                        self.addLink(episode_name,episode_url,5,iconimage,FANART_PATH,{})
+    def router(self, paramstring):
+        """
+        Router function that calls other functions
+        depending on the provided paramstring
+        :param paramstring:
+        :return:
+        """
+        # Parse a URL-encoded paramstring to the dictionary of
+        # {<parameter>: <value>} elements
+        params = dict(parse_qsl(paramstring[1:]))
 
-
-    def addReplay(self, new_mode):
-            self.addDir("Replay",new_mode,os.path.join(MEDIA_PATH, "btn_videos_on.png"),FANART_PATH,{},"Replay")
-
-    def addLastDay(self, new_mode):
-            self.addDir("Dernier jour",new_mode,os.path.join(MEDIA_PATH, "btn_videos_off.png"),FANART_PATH,{},"LastDay")
-
-    def addSeries(self, new_mode):
-            data        = open(CATALOG_PATH).read()
-            jsoncat     = json.loads(data.decode('iso-8859-1'))
-            response  = jsoncat['response']
-            programmes =response['programmes']
-            for serie in programmes :
-                serie_name          = serie['serie'].encode('utf-8')
-                serie_image          = serie['url_image_serie'].encode('utf-8')
-                serie_infos         = {}
-                self.addDir(serie_name,new_mode,serie_image,FANART_PATH,serie_infos,serie_name)
-
-
-    def addDirect(self):
-            data        = open(DIRECT_PATH).read()
-            jsoncat     = json.loads(data.decode('iso-8859-1'))
-            response  = jsoncat['response']
-            url_live =response['url_live']
-            self.addLink("Direct Zouzous",url_live,5,os.path.join(MEDIA_PATH, "btn_webtv_on.png"),FANART_PATH,{})       
-    
-    def download_catalogs(self):
-        if os.path.exists(CATALOG_PATH):
-            os.remove(CATALOG_PATH)
         if self.debug_mode:
-            print "REPLAY CATALOG URL: "+jsonReplayCatalog
-        urllib.urlretrieve(jsonReplayCatalog,CATALOG_PATH)
-        if os.path.exists(DIRECT_PATH):
-            os.remove(DIRECT_PATH)
-        if self.debug_mode:
-            print "DIRECT CATALOG URL: "+jsonDirect
-        urllib.urlretrieve(jsonDirect,DIRECT_PATH)
-    
-    def set_debug_mode(self):
-        self.debug_mode=__settings__.getSetting('debug')
-        if self.debug_mode== 'true':
-            self.debug_mode = True
+            print "Params : "
+            for item in params.items() : 
+                print item
+            
+        # Check the parameters passed to the plugin
+        if params:
+            if params['action'] == 'listing':
+                # Display the list of videos in a provided category.
+                self.list_videos(params['heroe'])
+            elif params['action'] == 'play':
+                # Play a video from a provided URL.
+                self.play_video(params['video'])
         else:
-            self.debug_mode = False
-        print "Zouzous:self.debug_mode Mode:"
-        print self.debug_mode        
+            # If the plugin is called from Kodi UI without any parameters,
+            # display the list of video categories
+            self.list_heroes()
+
+        xbmcplugin.setPluginCategory( handle=__handle__, category=__language__ ( 30000 ) )
+
+            
+    def list_heroes(self):
+        """
+        Create the list of video heroes in the Kodi interface.
+        :return: None
+        """
+        # Get video heroes
+        heroes = self.get_heroes()
+        # Create a list for our items.
+        listing = []
         
-    def addLink(self,name,url,mode,iconimage,fanart,infos={}):
-        u  =sys.argv[0]+"?url="+urllib.quote_plus(url)+"&mode="+str(mode)
-        ok =True
-        liz=xbmcgui.ListItem(name, iconImage="DefaultVideo.png", thumbnailImage=iconimage)
-        infos['Title'] = name
-        liz.setInfo( type="Video", infoLabels=infos )
-        liz.setProperty('IsPlayable', 'true')
-        liz.setProperty('Fanart_Image', fanart )
-        ok =xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=u,listitem=liz)
-        return ok         
-
-    def addDir(self,name,mode,iconimage,fanart,infos={},cat=''):
-        u  =sys.argv[0]+"?mode="+str(mode)+"&name="+urllib.quote_plus(name)+"&iconimage="+urllib.quote_plus(iconimage)+"&cat="+urllib.quote_plus(cat)
-        ok =True
-        liz=xbmcgui.ListItem(name, iconImage="DefaultFolder.png", thumbnailImage=iconimage)
-        infos['Title'] = name
-        liz.setInfo( type="Video", infoLabels=infos )
-        if fanart != '' :
-            liz.setProperty('Fanart_Image',fanart)
-        else :
-            liz.setProperty('Fanart_Image',FANART_PATH)
-        ok =xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=u,listitem=liz,isFolder=True)
-        return ok
+        # Add direct first
+        thumb = os.path.join(MEDIA_PATH, "img_zouzous_tv.png")
+        list_item = xbmcgui.ListItem(label='Zouzous TV', thumbnailImage=thumb)
+        # Set a fanart image for the list item.
+        # Here we use the same image as the thumbnail for simplicity's sake.
+        list_item.setProperty('fanart_image', FANART_PATH)
+        # Set additional info for the list item.
+        list_item.setInfo('video', {'title': 'Zouzous TV', 'genre': 'Dessin animé'})
+        # Set 'IsPlayable' property to 'true'.
+        # This is mandatory for playable items!
+        list_item.setProperty('IsPlayable', 'true')
+        # Create a URL for the plugin recursive callback.
+        # Example: plugin://plugin.video.example/?action=play&video=http://www.vidsplay.com/vids/crab.mp4
+        url = 'http://medias2.francetv.fr/playlists/zouzous/zouzous_mobiles.m3u8'
+        # Add the list item to a virtual Kodi folder.
+        # is_folder = False means that this item won't open any sub-list.
+        is_folder = False
+        # Add our item to the listing as a 3-element tuple.
+        listing.append((url, list_item, is_folder))
+        
+        # Iterate through heroes
+        for heroe in heroes:
+            # Create a list item with a text label and a thumbnail image.
+            list_item = xbmcgui.ListItem(label=heroe['name'], thumbnailImage=heroe['thumb'])
+            # Set a fanart image for the list item.
+            # Here we use the same image as the thumbnail for simplicity's sake.
+            list_item.setProperty('fanart_image', heroe['fanart'])
+            # Set additional info for the list item.
+            # Here we use a heroe name for both properties for for simplicity's sake.
+            # setInfo allows to set various information for an item.
+            # For available properties see the following link:
+            # http://mirrors.xbmc.org/docs/python-docs/15.x-isengard/xbmcgui.html#ListItem-setInfo
+            list_item.setInfo('video', {'title': heroe['name'], 'genre': 'Dessin animé'})
+            # Create a URL for the plugin recursive callback.
+            # Example: plugin://plugin.video.example/?action=listing&heroe=heroe-id
+            url = '{0}?action=listing&heroe={1}'.format(__url__, heroe['id'])
+            # is_folder = True means that this item opens a sub-list of lower level items.
+            is_folder = True
+            # Add our item to the listing as a 3-element tuple.
+            listing.append((url, list_item, is_folder))
+        # Add our listing to Kodi.
+        # Large lists and/or slower systems benefit from adding all items at once via addDirectoryItems
+        # instead of adding one by ove via addDirectoryItem.
+        xbmcplugin.addDirectoryItems(__handle__, listing, len(listing))
+        # Add sort methods
+        xbmcplugin.addSortMethod(__handle__, xbmcplugin.SORT_METHOD_UNSORTED)
+        xbmcplugin.addSortMethod(__handle__, xbmcplugin.SORT_METHOD_LABEL )
+        # Finish creating a virtual folder.
+        xbmcplugin.endOfDirectory(__handle__)
     
-    def get_params(self):
-        param      =[]
-        paramstring=sys.argv[2]
-        if len(paramstring)>=2:
-            params         =sys.argv[2]
-            cleanedparams  =params.replace('?','')
-            if (params[len(params)-1]=='/'):
-                params     =params[0:len(params)-2]
-            pairsofparams  =cleanedparams.split('&')
-            param={}
-            for i in range(len(pairsofparams)):
-                splitparams={}
-                splitparams=pairsofparams[i].split('=')
-                if (len(splitparams))==2:
-                    param[splitparams[0]]=splitparams[1]
-        return param
+    def list_videos(self, heroe):
+        """
+        Create the list of playable videos in the Kodi interface.
+        :param category: str
+        :return: None
+        """
+        # Get the list of videos in the category.
+        videos = self.get_videos(heroe)
+        # Create a list for our items.
+        listing = []
+        # Iterate through videos.
+        for video in videos:
+            # Create a list item with a text label and a thumbnail image.
+            list_item = xbmcgui.ListItem(label=video['name'], thumbnailImage=video['thumb'])
+            # Set a fanart image for the list item.
+            # Here we use the same image as the thumbnail for simplicity's sake.
+            list_item.setProperty('fanart_image', video['fanart'])
+            # Set additional info for the list item.
+            list_item.setInfo('video', {'title': video['name']
+                                        , 'genre': 'Dessin animé'
+                                        , 'date' : video['sortDate'] 
+                                        , 'tagline' : video['summary']
+                                        , 'plotoutline' : video['summary'] 
+                                        , 'duration' : video['time'] 
+                                        #, 'aired' : video['date'][0:10]
+                                        })
+            # Set 'IsPlayable' property to 'true'.
+            # This is mandatory for playable items!
+            list_item.setProperty('IsPlayable', 'true')
+            # Create a URL for the plugin recursive callback.
+            # Example: plugin://plugin.video.example/?action=play&video=http://www.vidsplay.com/vids/crab.mp4
+            url = '{0}?action=play&video={1}'.format(__url__, video['url'])
+            # Add the list item to a virtual Kodi folder.
+            # is_folder = False means that this item won't open any sub-list.
+            is_folder = False
+            # Add our item to the listing as a 3-element tuple.
+            listing.append((url, list_item, is_folder))
+        # Add our listing to Kodi.
+        # Large lists and/or slower systems benefit from adding all items at once via addDirectoryItems
+        # instead of adding one by ove via addDirectoryItem.
+        xbmcplugin.addDirectoryItems(__handle__, listing, len(listing))
+        # Add sort methods
+        xbmcplugin.addSortMethod(__handle__, xbmcplugin.SORT_METHOD_DATE )
+        xbmcplugin.addSortMethod(__handle__, xbmcplugin.SORT_METHOD_UNSORTED)
+        xbmcplugin.addSortMethod(__handle__, xbmcplugin.SORT_METHOD_LABEL )
+        # Finish creating a virtual folder.
+        xbmcplugin.endOfDirectory(__handle__)
+    
+  
+    def play_video(self, path):
+        """
+        Play a video by the provided path.
+        :param path: str
+        :return: None
+        """
+        # Create a playable item with a path to play.
+        play_item = xbmcgui.ListItem(path=path)
+        # Pass the item to the Kodi player.
+        xbmcplugin.setResolvedUrl(__handle__, True, listitem=play_item)
 
+
+    def get_heroes(self):
+        """
+        Get the list of heroes.
+        :return: list
+        """
+        if self.debug_mode:
+            print "get_heroes"
+        return HEROES
+    
+    def get_videos(self, heroe):
+        """
+        Get the list of video for a heroes.
+        :param heroe: str
+        :return: list
+        """
+        if self.debug_mode:
+            print "get_videos " + heroe
+        videos = []
+        data = self.get_data(baseUrl, heroe, heroe)
+        for video in data['items'] :
+            videos.append({
+                    'name' : video['title'],
+                    'thumb' : video['thumbnail']['uri'][THUMB_ID],
+                    'fanart' : video['hero']['avatar']['uri'][FANART_ID],
+                    'time' : self.calc_time(video['time']),
+                    'summary' : video['videoSummary'],
+                    'date' : video['diffusionDate'],
+                    'dateEnd' : video['publication']['dateEnd'],
+                    'sortDate' : video['publication']['dateEnd'][8:10] + '.' + video['publication']['dateEnd'][5:7] + '.' + video['publication']['dateEnd'][0:4],  
+                    'url' : self.get_video_url(video['identity'])
+                })
+    
+        return videos
+    
+    def calc_time(self, time):
+        if (time == None) :
+            return 0
+        else :
+            return time * 60 
+        
+    def get_video_url(self, identity):
+        data = self.get_data(infosUrl, identity.replace("@", "&catalogue="), identity.replace("@Zouzous", ""))
+        return data['videos'][0]['url']
+    
+    def get_data(self, baseUrl, url_id, file):
+        data_path = os.path.join(CACHEDIR, file)
+        url = baseUrl.format(url_id)
+        if os.path.exists(data_path):
+            os.remove(data_path)
+        if self.debug_mode:
+            print "DATA URL: "+url
+        r = webSession.get(url,stream=True)
+        with open(data_path, 'wb') as fd:
+            for chunk in r.iter_content(8):
+                fd.write(chunk)
+        
+        return json.loads(open(data_path).read().decode('iso-8859-1'))
+        
     def checkfolder(self,folder):
         try:
             if not os.path.exists(folder):
@@ -266,22 +456,29 @@ class Zouzous:
             print "Exception while creating folder "+folder
             print str(e)
 
-    def clean_thumbnail(self,video_url):
-        try:
-            filename = xbmc.getCacheThumbName(video_url)
-            filepath = xbmc.translatePath(os.path.join(THUMB_CACHE_PATH,filename[0],filename))
-            if os.path.isfile(filepath):
-                os.remove(filepath)
-                if self.debug_mode:
-                    print "Deleted %s thumb matching to %s video"%(filepath,video_url)
-            elif self.debug_mode:
-                print "No thumb found %s thumb matching to %s video"%(filepath,video_url)
-            return True
-        except:
-            print "Error: clean_thumbnail()"
-            print_exc()
-            return False  
+    def set_debug_mode(self):
+        self.debug_mode=__settings__.getSetting('debug')
+        if self.debug_mode== 'true':
+            self.debug_mode = True
+            # append pydev remote debugger
+            # Make pydev debugger works for auto reload.
+            # Note pydevd module need to be copied in XBMC\system\python\Lib\pysrc
+            try:
+                sys.path.append("/home/bureau/.p2/pool/plugins/org.python.pydev_5.2.0.201608171824/pysrc")
+                import pydevd # with the addon script.module.pydevd, only use `import pydevd`
+                # stdoutToServer and stderrToServer redirect stdout and stderr to eclipse console
+                pydevd.settrace('localhost', stdoutToServer=True, stderrToServer=True)
+            except ImportError:
+                sys.stderr.write("Error: " +
+                    "You must add org.python.pydev.debug.pysrc to your PYTHONPATH.")
+                sys.exit(1)
 
+        else:
+            self.debug_mode = False
+        print "Zouzous:self.debug_mode Mode:"
+        print self.debug_mode        
+        
+    
 #######################################################################################################################    
 # BEGIN !
 #######################################################################################################################
@@ -291,3 +488,5 @@ if ( __name__ == "__main__" ):
         Zouzous()
     except:
         print_exc()
+
+
