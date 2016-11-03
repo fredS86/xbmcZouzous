@@ -1,0 +1,170 @@
+{
+	"id": "146949469",
+	"ref_source": "PLURIMEDIA",
+	"code_programme": "la_maison_de_mickey",
+	"titre": "La maison de Mickey",
+	"sous_titre": "Mickey et Minnie font un safari",
+	"synopsis": "Mickey et Minnie font un safari afin de trouver une fleur extr\u00eamement rare, le hula hibiscus, qui ne fleurit qu'un jour dans l'ann\u00e9e...",
+	"genre": "Dessin anim\u00e9",
+	"genre_pluzz": "jeunesse",
+	"genre_pluzz_antenne": "jeunesse",
+	"type": "INTEGRAL",
+	"episode": 15,
+	"saison": 2,
+	"diffusion": {
+		"timestamp": 1476335100,
+		"date_debut": "13\/10\/2016 07:05"
+	},
+	"texte_diffusions": "",
+	"duree": "00:24:00",
+	"real_duration": 1381,
+	"image": "\/staticftv\/ref_emissions\/2016-10-13\/EMI_88495.jpg",
+	"chaine": "France 5",
+	"mediamat_id_chaine": 828,
+	"credit": null,
+	"region": null,
+	"url_site": "",
+	"url_guidetv": null,
+	"personnes": [],
+	"videos": [
+		{
+			"format": "m3u8-download",
+			"url": "http:\/\/replayftv-vh.akamaihd.net\/i\/streaming-adaptatif_france-dom-tom\/2016\/S41\/J4\/146949469-57ff1cbe7b023-,standard1,standard2,standard3,standard4,.mp4.csmil\/master.m3u8",
+			"statut": "ONLINE",
+			"drm": false,
+			"embed": false,
+			"geoblocage": [
+				"FR",
+				"AD",
+				"MC",
+				"GF",
+				"PF",
+				"GP",
+				"MQ",
+				"YT",
+				"NC",
+				"RE",
+				"BL",
+				"MF",
+				"PM",
+				"WF"
+			],
+			"droits_lecture_hors_connexion": true,
+			"plages_ouverture": [
+				{
+					"debut": 1476336635,
+					"fin": 1476941340,
+					"direct": false,
+					"startover": null
+				}
+			]
+		},
+		{
+			"format": "hds_akamai",
+			"url": "http:\/\/replayftv-vh.akamaihd.net\/z\/streaming-adaptatif_france-dom-tom\/2016\/S41\/J4\/146949469-57ff1cbe7b023-,standard1,standard2,standard3,standard4,standard5,.mp4.csmil\/manifest.f4m?audiotrack=0%3Afra%3AFrancais",
+			"statut": "ONLINE",
+			"drm": false,
+			"embed": false,
+			"geoblocage": [
+				"FR",
+				"AD",
+				"MC",
+				"GF",
+				"PF",
+				"GP",
+				"MQ",
+				"YT",
+				"NC",
+				"RE",
+				"BL",
+				"MF",
+				"PM",
+				"WF"
+			],
+			"droits_lecture_hors_connexion": true,
+			"plages_ouverture": [
+				{
+					"debut": 1476336635,
+					"fin": 1476941340,
+					"direct": false,
+					"startover": null
+				}
+			]
+		},
+		{
+			"format": "hls_v5_os",
+			"url": "http:\/\/replayftv-vh.akamaihd.net\/i\/streaming-adaptatif_france-dom-tom\/2016\/S41\/J4\/146949469-57ff1cbe7b023-,standard1,standard2,standard3,standard4,standard5,.mp4.csmil\/master.m3u8?caption=2016%2F41%2F146949469-1476337660.m3u8%3Afra%3AFrancais&audiotrack=0%3Afra%3AFrancais",
+			"statut": "ONLINE",
+			"drm": false,
+			"embed": false,
+			"geoblocage": [
+				"FR",
+				"AD",
+				"MC",
+				"GF",
+				"PF",
+				"GP",
+				"MQ",
+				"YT",
+				"NC",
+				"RE",
+				"BL",
+				"MF",
+				"PM",
+				"WF"
+			],
+			"droits_lecture_hors_connexion": true,
+			"plages_ouverture": [
+				{
+					"debut": 1476336635,
+					"fin": 1476941340,
+					"direct": false,
+					"startover": null
+				}
+			]
+		}
+	],
+	"url_reference": "http:\/\/pluzz.francetv.fr\/videos\/la_maison_de_mickey_,146949469.html",
+	"direct": null,
+	"id_aedra": "F5339771_127297",
+	"semaine_diffusion": null,
+	"droit": {
+		"type": "tvr",
+		"csa": "CSA1"
+	},
+	"subtitles": [
+		{
+			"type": "accessibilite",
+			"url": "http:\/\/static.francetv.fr\/sous-titres\/france5\/20161013\/146949469-57ff1cbe7b023-1476337659.ttml",
+			"format": "ttml"
+		},
+		{
+			"type": "accessibilite",
+			"url": "http:\/\/static.francetv.fr\/sous-titres\/france5\/20161013\/146949469-57ff1cbe7b023-1476337659.vtt",
+			"format": "vtt"
+		}
+	],
+	"sequences": [],
+	"lectures": {
+		"id": null,
+		"nb_lectures": 0
+	},
+	"lectures_groupes": [],
+	"votes": null,
+	"indexes": [],
+	"ordre": null,
+	"tag_OAS": null,
+	"id_emission_plurimedia": 11037169,
+	"audiodescription": false,
+	"spritesheet": [
+		"http:\/\/static.francetv.fr\/videospritesheets\/201641\/57ff1cbe7b023\/146949469-57ff1cbe7b0230.jpeg",
+		"http:\/\/static.francetv.fr\/videospritesheets\/201641\/57ff1cbe7b023\/146949469-57ff1cbe7b0231.jpeg",
+		"http:\/\/static.francetv.fr\/videospritesheets\/201641\/57ff1cbe7b023\/146949469-57ff1cbe7b0232.jpeg",
+		"http:\/\/static.francetv.fr\/videospritesheets\/201641\/57ff1cbe7b023\/146949469-57ff1cbe7b0233.jpeg",
+		"http:\/\/static.francetv.fr\/videospritesheets\/201641\/57ff1cbe7b023\/146949469-57ff1cbe7b0234.jpeg",
+		"http:\/\/static.francetv.fr\/videospritesheets\/201641\/57ff1cbe7b023\/146949469-57ff1cbe7b0235.jpeg",
+		"http:\/\/static.francetv.fr\/videospritesheets\/201641\/57ff1cbe7b023\/146949469-57ff1cbe7b0236.jpeg",
+		"http:\/\/static.francetv.fr\/videospritesheets\/201641\/57ff1cbe7b023\/146949469-57ff1cbe7b0237.jpeg"
+	],
+	"id_taxo": "57ff1ff6ad8cbb04608b4568"
+}
