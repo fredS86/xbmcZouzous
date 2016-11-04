@@ -11,16 +11,14 @@ import sys
 import simplejson as json
 # print_exc
 from traceback import print_exc
-# requests
-import requests
-webSession = requests.Session()
-
+import CommonFunctions
+common = CommonFunctions
 from urlparse import parse_qsl
 
 __addonID__         = "plugin.video.Zouzous"
 __author__          = "FredS86"
 __date__            = "02-11-2016"
-__version__         = "2.0"
+__version__         = "1.1-beta2"
 __credits__         = ""
 __addon__           = xbmcaddon.Addon( __addonID__ )
 __settings__        = __addon__
@@ -39,8 +37,9 @@ FANART_PATH         = os.path.join( ROOTDIR, "fanart.jpg" )
 # List of directories to check at startup
 dirCheckList        = (CACHEDIR,)
 # Catalogue
-baseUrl            = "http://www.zouzous.fr/heros/{0}/playlist" # + "?limit=10&offset=4"
-infosUrl           = "http://sivideo.webservices.francetelevisions.fr/tools/getInfosOeuvre/v2/?idDiffusion={0}"
+heroesUrl          = 'http://www.zouzous.fr'
+heroUrl            = "http://www.zouzous.fr/heros/{0}/playlist" # + "?limit=10&offset=4"
+videoUrl           = "http://sivideo.webservices.francetelevisions.fr/tools/getInfosOeuvre/v2/?idDiffusion={0}"
 
 # Get the plugin url in plugin:// notation.
 __url__ = sys.argv[0]
@@ -49,165 +48,6 @@ __handle__ = int(sys.argv[1])
 
 FANART_ID='1024x576'
 THUMB_ID='262x262'
-HEROES = [
-      {
-        'id' : 'peppa-pig-1',
-        'name': 'Peppa Pig',
-        'thumb': 'http://www.zouzous.fr/image/%s/pictos-heros-peppa-800x800.png'%THUMB_ID,
-        'fanart': 'http://www.zouzous.fr/image/%s/pictos-heros-peppa-800x800.png'%FANART_ID,
-        'color': '#dbbfd0'},
-      {
-        'id' : 'la-maison-de-mickey', 
-        'name': 'La maison de mickey',
-        'thumb': 'http://www.zouzous.fr/image/%s/heros-20.png'%THUMB_ID,
-        'fanart': 'http://www.zouzous.fr/image/%s/heros-20.png'%FANART_ID,
-        'color': '#c11e21'},
-      {
-        'id' : 'sam-le-pompier',
-        'name': 'Sam le Pompier',
-        'thumb': 'http://www.zouzous.fr/image/%s/pictos-heros-samlepompier-800x800.png'%THUMB_ID,
-        'fanart': 'http://www.zouzous.fr/image/%s/pictos-heros-samlepompier-800x800.png'%FANART_ID,
-        'color': '#133171'},
-      {
-        'id' : 'oui-oui',
-        'name': 'Hé, Oua-Oua',
-        'thumb': 'http://www.zouzous.fr/image/%s/he.png'%THUMB_ID,
-        'fanart': 'http://www.zouzous.fr/image/%s/he.png'%FANART_ID,
-        'color': '#5565b0'},
-      {
-        'id' : 'pyjamasques',
-        'name': 'Pyjamasques',
-        'thumb': 'http://www.zouzous.fr/image/%s/pictos-heros-pyjamasques-800x800-1.png'%THUMB_ID,
-        'fanart': 'http://www.zouzous.fr/image/%s/pictos-heros-pyjamasques-800x800-1.png'%FANART_ID,
-        'color': '#009a49'},
-      {
-        'id' : 'cesar-et-capucine',
-        'name': 'César et Capucine',
-        'thumb': 'http://www.zouzous.fr/image/%s/pictos-heros-cesaeretcapucine-800x800.png'%THUMB_ID,
-        'fanart': 'http://www.zouzous.fr/image/%s/pictos-heros-cesaeretcapucine-800x800.png'%FANART_ID,
-        'color': '#85d7f3'},
-      {
-        'id' : 'kiwi-et-stritt',
-        'name': 'Kiwi et Strit',
-        'thumb': 'http://www.zouzous.fr/image/%s/sans-titre-2-267.png'%THUMB_ID,
-        'fanart': 'http://www.zouzous.fr/image/%s/sans-titre-2-267.png'%FANART_ID,
-        'color': '#44a747'},
-      {
-        'id' : 'docteur-lapeluche',
-        'name': 'Docteur Lapeluche',
-        'thumb': 'http://www.zouzous.fr/image/%s/heros-21.png'%THUMB_ID,
-        'fanart': 'http://www.zouzous.fr/image/%s/heros-21.png'%FANART_ID,
-        'color': '#b36e97'},
-      {
-        'id' : 'masha-et-michka',
-        'name': 'Masha et Michka',
-        'thumb': 'http://www.zouzous.fr/image/%s/mashaetmichka-preview-2300-1.png'%THUMB_ID,
-        'fanart': 'http://www.zouzous.fr/image/%s/mashaetmichka-preview-2300-1.png'%FANART_ID,
-        'color': '#a35a8d'},
-      {
-        'id' : 'pierre-lapin',
-        'name': 'Pierre Lapin',
-        'thumb': 'http://www.zouzous.fr/image/%s/pictos-heros-pierre-lapin-800x800.png'%THUMB_ID,
-        'fanart': 'http://www.zouzous.fr/image/%s/pictos-heros-pierre-lapin-800x800.png'%FANART_ID,
-        'color': '#505481'},
-      {
-        'id' : 'mini-sorcieres-1',
-        'name': 'Mini-Sorcières',
-        'thumb': 'http://www.zouzous.fr/image/%s/sans-titre-1-685.png'%THUMB_ID,
-        'fanart': 'http://www.zouzous.fr/image/%s/sans-titre-1-685.png'%FANART_ID,
-        'color': '#00718f'},
-      {
-        'id' : 'petit-ours-brun',
-        'name': 'Petit Ours Brun',
-        'thumb': 'http://www.zouzous.fr/image/%s/pictos-heros-pob-800x800.png'%THUMB_ID,
-        'fanart': 'http://www.zouzous.fr/image/%s/pictos-heros-pob-800x800.png'%FANART_ID,
-        'color': '#f0bb6c'},
-      {
-        'id' : 'les-triples',
-        'name': 'Les triplés',
-        'thumb': 'http://www.zouzous.fr/image/%s/pictos-heros-lestriples-800x800.png'%THUMB_ID,
-        'fanart': 'http://www.zouzous.fr/image/%s/pictos-heros-lestriples-800x800.png'%FANART_ID,
-        'color': '#6e8dce'},
-      {
-        'id' : 'les-comptines-de-boubi',
-        'name': 'Les comptines de Boubi',
-        'thumb': 'http://www.zouzous.fr/image/%s/boubi-picto-heros-notes2.png'%THUMB_ID,
-        'fanart': 'http://www.zouzous.fr/image/%s/boubi-picto-heros-notes2.png'%FANART_ID,
-        'color': '#a85a56'},
-      {
-        'id' : 'bob-le-bricoleur',
-        'name': 'Bob le bricoleur',
-        'thumb': 'http://www.zouzous.fr/image/%s/pictos-heros-boblebrico-800x800.png'%THUMB_ID,
-        'fanart': 'http://www.zouzous.fr/image/%s/pictos-heros-boblebrico-800x800.png'%FANART_ID,
-        'color': '#81909b'},
-      {
-        'id' : 'jack-et-les-camions',
-        'name': 'Jack et les camions',
-        'thumb': 'http://www.zouzous.fr/image/%s/pictos-heros-jack-et-les-camions-800x800.png'%THUMB_ID,
-        'fanart': 'http://www.zouzous.fr/image/%s/pictos-heros-jack-et-les-camions-800x800.png'%FANART_ID,
-        'color': '#e49076'},
-      {
-        'id' : 'petit-ours-brun-en-anglais',
-        'name': 'Petit Ours Brun en anglais',
-        'thumb': 'http://www.zouzous.fr/image/%s/pictos-heros-pob-english-800x800.png'%THUMB_ID,
-        'fanart': 'http://www.zouzous.fr/image/%s/pictos-heros-pob-english-800x800.png'%FANART_ID,
-        'color': '#e588e6'},
-      {
-        'id' : 'le-manege-enchante',
-        'name': 'Le manège enchanté',
-        'thumb': 'http://www.zouzous.fr/image/%s/pictos-heros-amnegeenchante-800x800.png'%THUMB_ID,
-        'fanart': 'http://www.zouzous.fr/image/%s/pictos-heros-amnegeenchante-800x800.png'%FANART_ID,
-        'color': '#f6cb51'},
-      {
-        'id' : 'mademoiselle-zazie',
-        'name': 'Mademoiselle Zazie',
-        'thumb': 'http://www.zouzous.fr/image/%s/mademoisellezazie.png'%THUMB_ID,
-        'fanart': 'http://www.zouzous.fr/image/%s/mademoisellezazie.png'%FANART_ID,
-        'color': '#fe752e'},
-      {
-        'id' : 'a-table-les-enfants-1',
-        'name': 'A table les enfants',
-        'thumb': 'http://www.zouzous.fr/image/%s/pictos-heros-atable-800x800-1.png'%THUMB_ID,
-        'fanart': 'http://www.zouzous.fr/image/%s/pictos-heros-atable-800x800-1.png'%FANART_ID,
-        'color': '#44d138'},
-      {
-        'id' : 'zack-et-quack',
-        'name': 'Zack et Quack',
-        'thumb': 'http://www.zouzous.fr/image/%s/zack-excited-01.png'%THUMB_ID,
-        'fanart': 'http://www.zouzous.fr/image/%s/zack-excited-01.png'%FANART_ID,
-        'color': '#20b4b9'},
-      {
-        'id' : 'les-defis-d-alfridge-1',
-        'name': 'Les défis d\'Alfridge',
-        'thumb': 'http://www.zouzous.fr/image/%s/alfriedge.png'%THUMB_ID,
-        'fanart': 'http://www.zouzous.fr/image/%s/alfriedge.png'%FANART_ID,
-        'color': '#f19104'},
-      {
-        'id' : 'manimo',
-        'name': 'Manimo',
-        'thumb': 'http://www.zouzous.fr/image/%s/pictos-heros-manimo-800x800.png'%THUMB_ID,
-        'fanart': 'http://www.zouzous.fr/image/%s/pictos-heros-manimo-800x800.png'%FANART_ID,
-        'color': '#cac1ad'},
-      {
-        'id' : 'sid-le-petit-scientifique',
-        'name': 'Sid le petit scientifique',
-        'thumb': 'http://www.zouzous.fr/image/%s/pictos-heros-sid-800x800.png'%THUMB_ID,
-        'fanart': 'http://www.zouzous.fr/image/%s/pictos-heros-sid-800x800.png'%FANART_ID,
-        'color': '#5c61bd'},
-      {
-        'id' : 't-choupi',
-        'name': 'T\'choupi à l\'école',
-        'thumb': 'http://www.zouzous.fr/image/%s/pictos-heros-tchoupi-800x800.png'%THUMB_ID,
-        'fanart': 'http://www.zouzous.fr/image/%s/pictos-heros-tchoupi-800x800.png'%FANART_ID,
-        'color': '#756c69'},
-      {
-        'id' : 'zou',
-        'name': 'Zou',
-        'thumb': 'http://www.zouzous.fr/image/%s/pictos-heros-zou-800x800.png'%THUMB_ID,
-        'fanart': 'http://www.zouzous.fr/image/%s/pictos-heros-zou-800x800.png'%FANART_ID,
-        'color': '#fdd237'},
-      ]
-
 
 class Zouzous:
     """
@@ -396,18 +236,39 @@ class Zouzous:
         """
         if self.debug_mode:
             print "get_heroes"
-        return HEROES
+        heroes = []
+        zouzous = common.fetchPage({'link': heroesUrl})
+        if zouzous['status'] == 200 :
+            heroesHtml = common.parseDOM(zouzous['content'], name = 'ul', attrs = { 'class': 'Heroes__List__Content' }, ret = False) 
+            
+            heroesId = common.parseDOM(heroesHtml, name = 'li', attrs = { 'class': 'Hero' }, ret = 'data-hero-id') 
+            
+            for heroId in heroesId :
+                heroHtml = common.parseDOM(heroesHtml, name = 'li', attrs = { 'class': 'Hero', 'data-hero-id' : heroId }, ret = False)
+                heroes.append({
+                        'id' : heroId,
+                        'name': common.replaceHTMLCodes(common.parseDOM(heroHtml, name = 'h2')[0]),
+                        'thumb': common.parseDOM(heroHtml, name = 'img', attrs = { 'class': 'Hero__Icon' }, ret = 'src')[0].replace('88x88', THUMB_ID),
+                        'fanart': common.parseDOM(heroHtml, name = 'img', attrs = { 'class': 'Hero__Icon' }, ret = 'src')[0].replace('88x88', FANART_ID)
+                    })
+#        <li class="Hero" style="background-color: #dbbfd0" data-hero-id="peppa-pig-1">
+#                    <a title="Peppa Pig" href="/heros/peppa-pig-1">
+#                        <img class="Hero__Icon" src="http://www.zouzous.fr/image/88x88/pictos-heros-peppa-800x800.png" alt="Peppa Pig" title="Peppa Pig">
+#                        <div class="Hero__Name " style="color: #dbbfd0"><h2 class="Hero__Name__Content">Peppa Pig</h2></div>
+#                    </a>
+#        </li>
+        return heroes
     
-    def get_videos(self, heroe):
+    def get_videos(self, hero):
         """
         Get the list of video for a heroes.
         :param heroe: str
         :return: list
         """
         if self.debug_mode:
-            print "get_videos " + heroe
+            print "get_videos " + hero
         videos = []
-        data = self.get_data(baseUrl, heroe, heroe)
+        data = self.get_data(heroUrl, hero)
         for video in data['items'] :
             videos.append({
                     'name' : video['title'],
@@ -430,22 +291,16 @@ class Zouzous:
             return time * 60 
         
     def get_video_url(self, identity):
-        data = self.get_data(infosUrl, identity.replace("@", "&catalogue="), identity.replace("@Zouzous", ""))
+        data = self.get_data(videoUrl, identity.replace("@", "&catalogue="))
         return data['videos'][0]['url']
     
-    def get_data(self, baseUrl, url_id, file):
-        data_path = os.path.join(CACHEDIR, file)
+    def get_data(self, baseUrl, url_id):
         url = baseUrl.format(url_id)
-        if os.path.exists(data_path):
-            os.remove(data_path)
         if self.debug_mode:
             print "DATA URL: "+url
-        r = webSession.get(url,stream=True)
-        with open(data_path, 'wb') as fd:
-            for chunk in r.iter_content(8):
-                fd.write(chunk)
-        
-        return json.loads(open(data_path).read().decode('iso-8859-1'))
+        data = common.fetchPage({'link': url})
+
+        return json.loads(data['content'])
         
     def checkfolder(self,folder):
         try:
