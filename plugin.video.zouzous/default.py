@@ -16,38 +16,31 @@ common = CommonFunctions
 from urlparse import parse_qsl
 
 __addonID__         = "plugin.video.Zouzous"
-__author__          = "FredS86"
-__date__            = "02-11-2016"
 __version__         = "1.1-beta2"
-__credits__         = ""
 __addon__           = xbmcaddon.Addon( __addonID__ )
 __settings__        = __addon__
 __language__        = __addon__.getLocalizedString
 __addonDir__        = __settings__.getAddonInfo( "path" )
 
-   
-
 # Global Variable
 ROOTDIR             = __addonDir__
-BASE_RESOURCE_PATH  = os.path.join( ROOTDIR, "resources" )
-MEDIA_PATH          = os.path.join( BASE_RESOURCE_PATH, "media" )
+MEDIA_PATH          = os.path.join( os.path.join( ROOTDIR, "resources" ), "media" )
 ADDON_DATA          = xbmc.translatePath( "special://profile/addon_data/%s/" % __addonID__ )
-CACHEDIR            = os.path.join( ADDON_DATA, "cache")
 FANART_PATH         = os.path.join( ROOTDIR, "fanart.jpg" )
-# List of directories to check at startup
-dirCheckList        = (CACHEDIR,)
-# Catalogue
+FANART_ID='1024x576'
+THUMB_ID='262x262'
+# Catalogues URL
 heroesUrl          = 'http://www.zouzous.fr'
 heroUrl            = "http://www.zouzous.fr/heros/{0}/playlist" # + "?limit=10&offset=4"
 videoUrl           = "http://sivideo.webservices.francetelevisions.fr/tools/getInfosOeuvre/v2/?idDiffusion={0}"
+directUrl          = 'http://medias2.francetv.fr/playlists/zouzous/zouzous_mobiles.m3u8'
 
 # Get the plugin url in plugin:// notation.
 __url__ = sys.argv[0]
 # Get the plugin handle as an integer number.
 __handle__ = int(sys.argv[1])
-
-FANART_ID='1024x576'
-THUMB_ID='262x262'
+# Get the URL-encoded paramstring
+__paramString__ = sys.argv[2]
 
 class Zouzous:
     """
@@ -60,32 +53,20 @@ class Zouzous:
         print "  Zouzous - Version: %s"%__version__
         print "==============================="
         print
-        self.set_debug_mode()
+        self.__set_debug_mode__()
         if self.debug_mode:
             print "Python version:"
             print sys.version_info
             print "ROOTDIR: %s"%ROOTDIR
+            print "MEDIA_PATH: %s"%MEDIA_PATH
             print "ADDON_DATA: %s"%ADDON_DATA
-            print "CACHEDIR: %s"%CACHEDIR 
             print "FANART_PATH: %s"%FANART_PATH 
+            print "FANART_ID: %s"%FANART_ID 
+            print "THUMB_ID: %s"%THUMB_ID 
  
-        # Check if directories in user data exist
-        for i in range(len(dirCheckList)):
-            self.checkfolder(dirCheckList[i]) 
-    
-        self.router(sys.argv[2])
-
-
-    def router(self, paramstring):
-        """
-        Router function that calls other functions
-        depending on the provided paramstring
-        :param paramstring:
-        :return:
-        """
-        # Parse a URL-encoded paramstring to the dictionary of
+        # Parse a URL-encoded __paramString__ to the dictionary of
         # {<parameter>: <value>} elements
-        params = dict(parse_qsl(paramstring[1:]))
+        params = dict(parse_qsl(__paramString__[1:]))
 
         if self.debug_mode:
             print "Params : "
@@ -95,26 +76,24 @@ class Zouzous:
         # Check the parameters passed to the plugin
         if params:
             if params['action'] == 'listing':
-                # Display the list of videos in a provided category.
-                self.list_videos(params['heroe'])
+                # Display the list of videos for a provided hero.
+                self.list_videos(self.get_videos(params['hero']))
             elif params['action'] == 'play':
                 # Play a video from a provided URL.
                 self.play_video(params['video'])
         else:
             # If the plugin is called from Kodi UI without any parameters,
             # display the list of video categories
-            self.list_heroes()
+            self.list_heroes(self.get_heroes())
 
         xbmcplugin.setPluginCategory( handle=__handle__, category=__language__ ( 30000 ) )
 
             
-    def list_heroes(self):
+    def list_heroes(self, heroes):
         """
         Create the list of video heroes in the Kodi interface.
         :return: None
         """
-        # Get video heroes
-        heroes = self.get_heroes()
         # Create a list for our items.
         listing = []
         
@@ -122,45 +101,33 @@ class Zouzous:
         thumb = os.path.join(MEDIA_PATH, "img_zouzous_tv.png")
         list_item = xbmcgui.ListItem(label='Zouzous TV', thumbnailImage=thumb)
         # Set a fanart image for the list item.
-        # Here we use the same image as the thumbnail for simplicity's sake.
         list_item.setProperty('fanart_image', FANART_PATH)
         # Set additional info for the list item.
         list_item.setInfo('video', {'title': 'Zouzous TV', 'genre': 'Dessin animé'})
         # Set 'IsPlayable' property to 'true'.
         # This is mandatory for playable items!
         list_item.setProperty('IsPlayable', 'true')
-        # Create a URL for the plugin recursive callback.
-        # Example: plugin://plugin.video.example/?action=play&video=http://www.vidsplay.com/vids/crab.mp4
-        url = 'http://medias2.francetv.fr/playlists/zouzous/zouzous_mobiles.m3u8'
-        # Add the list item to a virtual Kodi folder.
         # is_folder = False means that this item won't open any sub-list.
         is_folder = False
         # Add our item to the listing as a 3-element tuple.
-        listing.append((url, list_item, is_folder))
+        listing.append((directUrl, list_item, is_folder))
         
         # Iterate through heroes
-        for heroe in heroes:
+        for hero in heroes:
             # Create a list item with a text label and a thumbnail image.
-            list_item = xbmcgui.ListItem(label=heroe['name'], thumbnailImage=heroe['thumb'])
+            list_item = xbmcgui.ListItem(label=hero['name'], thumbnailImage=hero['thumb'])
             # Set a fanart image for the list item.
-            # Here we use the same image as the thumbnail for simplicity's sake.
-            list_item.setProperty('fanart_image', heroe['fanart'])
+            list_item.setProperty('fanart_image', hero['fanart'])
             # Set additional info for the list item.
-            # Here we use a heroe name for both properties for for simplicity's sake.
-            # setInfo allows to set various information for an item.
-            # For available properties see the following link:
-            # http://mirrors.xbmc.org/docs/python-docs/15.x-isengard/xbmcgui.html#ListItem-setInfo
-            list_item.setInfo('video', {'title': heroe['name'], 'genre': 'Dessin animé'})
+            list_item.setInfo('video', {'title': hero['name'], 'genre': 'Dessin animé'})
             # Create a URL for the plugin recursive callback.
-            # Example: plugin://plugin.video.example/?action=listing&heroe=heroe-id
-            url = '{0}?action=listing&heroe={1}'.format(__url__, heroe['id'])
+            # Example: plugin://plugin.video.Zouzous/?action=listing&hero=hero
+            url = '{0}?action=listing&hero={1}'.format(__url__, hero['id'])
             # is_folder = True means that this item opens a sub-list of lower level items.
             is_folder = True
             # Add our item to the listing as a 3-element tuple.
             listing.append((url, list_item, is_folder))
         # Add our listing to Kodi.
-        # Large lists and/or slower systems benefit from adding all items at once via addDirectoryItems
-        # instead of adding one by ove via addDirectoryItem.
         xbmcplugin.addDirectoryItems(__handle__, listing, len(listing))
         # Add sort methods
         xbmcplugin.addSortMethod(__handle__, xbmcplugin.SORT_METHOD_UNSORTED)
@@ -168,14 +135,12 @@ class Zouzous:
         # Finish creating a virtual folder.
         xbmcplugin.endOfDirectory(__handle__)
     
-    def list_videos(self, heroe):
+    def list_videos(self, videos):
         """
         Create the list of playable videos in the Kodi interface.
         :param category: str
         :return: None
         """
-        # Get the list of videos in the category.
-        videos = self.get_videos(heroe)
         # Create a list for our items.
         listing = []
         # Iterate through videos.
@@ -183,7 +148,6 @@ class Zouzous:
             # Create a list item with a text label and a thumbnail image.
             list_item = xbmcgui.ListItem(label=video['name'], thumbnailImage=video['thumb'])
             # Set a fanart image for the list item.
-            # Here we use the same image as the thumbnail for simplicity's sake.
             list_item.setProperty('fanart_image', video['fanart'])
             # Set additional info for the list item.
             list_item.setInfo('video', {'title': video['name']
@@ -198,16 +162,13 @@ class Zouzous:
             # This is mandatory for playable items!
             list_item.setProperty('IsPlayable', 'true')
             # Create a URL for the plugin recursive callback.
-            # Example: plugin://plugin.video.example/?action=play&video=http://www.vidsplay.com/vids/crab.mp4
+            # Example: plugin://plugin.video.Zouzous/?action=play&video=http://www.vidsplay.com/vids/crab.mp4
             url = '{0}?action=play&video={1}'.format(__url__, video['url'])
-            # Add the list item to a virtual Kodi folder.
             # is_folder = False means that this item won't open any sub-list.
             is_folder = False
             # Add our item to the listing as a 3-element tuple.
             listing.append((url, list_item, is_folder))
         # Add our listing to Kodi.
-        # Large lists and/or slower systems benefit from adding all items at once via addDirectoryItems
-        # instead of adding one by ove via addDirectoryItem.
         xbmcplugin.addDirectoryItems(__handle__, listing, len(listing))
         # Add sort methods
         xbmcplugin.addSortMethod(__handle__, xbmcplugin.SORT_METHOD_DATE )
@@ -259,6 +220,7 @@ class Zouzous:
 #        </li>
         return heroes
     
+    
     def get_videos(self, hero):
         """
         Get the list of video for a heroes.
@@ -268,33 +230,34 @@ class Zouzous:
         if self.debug_mode:
             print "get_videos " + hero
         videos = []
-        data = self.get_data(heroUrl, hero)
+        data = self.__get_data__(heroUrl, hero)
         for video in data['items'] :
             videos.append({
                     'name' : video['title'],
                     'thumb' : video['thumbnail']['uri'][THUMB_ID],
                     'fanart' : video['hero']['avatar']['uri'][FANART_ID],
-                    'time' : self.calc_time(video['time']),
+                    'time' : self.__calc_time__(video['time']),
                     'summary' : video['videoSummary'],
                     'date' : video['diffusionDate'],
                     'dateEnd' : video['publication']['dateEnd'],
                     'sortDate' : video['publication']['dateEnd'][8:10] + '.' + video['publication']['dateEnd'][5:7] + '.' + video['publication']['dateEnd'][0:4],  
-                    'url' : self.get_video_url(video['identity'])
+                    'url' : self.__get_video_url__(video['identity'])
                 })
     
         return videos
     
-    def calc_time(self, time):
+    
+    def __calc_time__(self, time):
         if (time == None) :
             return 0
         else :
             return time * 60 
         
-    def get_video_url(self, identity):
-        data = self.get_data(videoUrl, identity.replace("@", "&catalogue="))
+    def __get_video_url__(self, identity):
+        data = self.__get_data__(videoUrl, identity.replace("@", "&catalogue="))
         return data['videos'][0]['url']
     
-    def get_data(self, baseUrl, url_id):
+    def __get_data__(self, baseUrl, url_id):
         url = baseUrl.format(url_id)
         if self.debug_mode:
             print "DATA URL: "+url
@@ -302,18 +265,8 @@ class Zouzous:
 
         return json.loads(data['content'])
         
-    def checkfolder(self,folder):
-        try:
-            if not os.path.exists(folder):
-                print "checkfolder Impossible to find the directory - trying to create the directory: "+folder
-                os.makedirs(folder)
-        except Exception, e:
-            print "Exception while creating folder "+folder
-            print str(e)
-
-    def set_debug_mode(self):
-        self.debug_mode=__settings__.getSetting('debug')
-        if self.debug_mode== 'true':
+    def __set_debug_mode__(self):
+        if __settings__.getSetting('debug') == 'true':
             self.debug_mode = True
             # append pydev remote debugger
             # Make pydev debugger works for auto reload.
@@ -343,5 +296,3 @@ if ( __name__ == "__main__" ):
         Zouzous()
     except:
         print_exc()
-
-
